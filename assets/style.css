@@ -1,0 +1,92 @@
+/* assets/style.css - CSS Responsive untuk Survey Kepuasan */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f6f6ff;
+  margin: 0;
+  padding: 0;
+}
+.container,
+.login-container {
+  max-width: 400px;
+  margin: 40px auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 32px 24px;
+  text-align: center;
+}
+h1,
+h2 {
+  color: #1a237e;
+  margin-bottom: 16px;
+}
+ul {
+  list-style: none;
+  padding: 0;
+}
+ul li {
+  margin: 12px 0;
+}
+ul li a,
+.back-link {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #3949ab;
+  color: #fff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+ul li a:hover,
+.back-link:hover {
+  background: #1a237e;
+}
+input[type="text"],
+input[type="password"] {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+}
+button {
+  width: 100%;
+  padding: 12px;
+  background: #3949ab;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+button:hover {
+  background: #1a237e;
+}
+.error {
+  background: #ffcdd2;
+  color: #b71c1c;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+@media (max-width: 600px) {
+  .container,
+  .login-container {
+    max-width: 98vw;
+    padding: 18px 6vw;
+  }
+  h1,
+  h2 {
+    font-size: 1.3em;
+  }
+  ul li a,
+  .back-link {
+    padding: 8px 12px;
+    font-size: 0.95em;
+  }
+}
