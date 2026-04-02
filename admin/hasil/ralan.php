@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../config/koneksi.php';
 cek_login();
 
@@ -78,7 +78,7 @@ $respondents = [];
 $respondentIds = [];
 while ($row = mysqli_fetch_assoc($dataResult)) {
     $row['id'] = (int) $row['id'];
-    $respondents[$row['id']] = $row + ['jawaban' => []];
+    $respondents[$row['id']] = $row + ['jawaban' => [], 'komplain_id' => null, 'komplain_status' => '', 'komplain_sumber' => ''];
     $respondentIds[] = $row['id'];
 }
 mysqli_stmt_close($stmtData);
@@ -96,6 +96,17 @@ if ($respondentIds) {
         $group = $row['kategori'] ?: 'Lainnya';
         $respondents[$idResponden]['jawaban'][$group][] = ['pertanyaan' => $row['pertanyaan'], 'jawaban' => $label];
     }
+
+    $komplainQuery = mysqli_query($conn, "SELECT id, id_responden, status, sumber_data FROM komplain WHERE id_responden IN ($idList)");
+    while ($komplain = mysqli_fetch_assoc($komplainQuery)) {
+        $idResponden = (int) $komplain['id_responden'];
+        if (!isset($respondents[$idResponden])) {
+            continue;
+        }
+        $respondents[$idResponden]['komplain_id'] = (int) $komplain['id'];
+        $respondents[$idResponden]['komplain_status'] = $komplain['status'];
+        $respondents[$idResponden]['komplain_sumber'] = $komplain['sumber_data'];
+    }
 }
 
 function badge_detail_ralan(string $jawaban): string
@@ -103,8 +114,7 @@ function badge_detail_ralan(string $jawaban): string
     if ($jawaban === 'Puas') { return '<span class="detail-answer puas">Puas</span>'; }
     if ($jawaban === 'Kurang Puas') { return '<span class="detail-answer kurang">Kurang Puas</span>'; }
     if ($jawaban === 'Tidak Puas') { return '<span class="detail-answer tidak">Tidak Puas</span>'; }
-    return '<span class="detail-answer kosong">-</span>';
-}
+    return '<span class="detail-answer kosong">-</span>'; }
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/admin_nav.php';
@@ -161,7 +171,7 @@ require_once __DIR__ . '/../../includes/admin_nav.php';
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle responden-summary-table">
-                    <thead><tr><th width="170">Tanggal</th><th>Nama</th><th width="160">Jenis Kelamin</th><th width="220">Lokasi Aduan</th><th width="190">Aksi</th></tr></thead>
+                    <thead><tr><th width="170">Tanggal</th><th>Nama</th><th width="160">Jenis Kelamin</th><th width="220">Lokasi Aduan</th><th width="280">Aksi</th></tr></thead>
                     <tbody>
                         <?php if (!$respondents) : ?>
                             <tr><td colspan="5" class="text-center text-muted py-4">Tidak ada responden yang cocok dengan filter.</td></tr>
@@ -176,6 +186,11 @@ require_once __DIR__ . '/../../includes/admin_nav.php';
                                         <div class="d-flex gap-2 flex-wrap">
                                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detailRalan<?= $detail['id']; ?>"><i class="fa-solid fa-eye me-1"></i>Detail</button>
                                             <?php if (user_punya_role('admin')) : ?>
+                                                <?php if (!empty($detail['komplain_id'])) : ?>
+                                                    <a href="<?= url('admin/komplain/edit.php?id=' . $detail['komplain_id'] . '&return=' . urlencode($returnUrl)); ?>" class="btn btn-sm btn-outline-success"><i class="fa-solid fa-file-circle-check me-1"></i>Komplain</a>
+                                                <?php else : ?>
+                                                    <a href="<?= url('admin/komplain/tambah.php?id_responden=' . $detail['id'] . '&return=' . urlencode($returnUrl)); ?>" class="btn btn-sm btn-outline-warning text-dark"><i class="fa-solid fa-file-circle-plus me-1"></i>Jadikan Komplain</a>
+                                                <?php endif; ?>
                                                 <a href="<?= url('admin/hasil/hapus_responden.php?id=' . $detail['id'] . '&jenis=ralan&return=' . urlencode($returnUrl)); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus responden ini beserta semua jawabannya?');"><i class="fa-solid fa-trash me-1"></i>Hapus</a>
                                             <?php endif; ?>
                                         </div>
@@ -218,4 +233,3 @@ require_once __DIR__ . '/../../includes/admin_nav.php';
 <?php endforeach; ?>
 <?php mysqli_stmt_close($stmtSummary); ?>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
-

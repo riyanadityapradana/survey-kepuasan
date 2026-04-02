@@ -218,3 +218,35 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+CREATE TABLE `komplain` (
+  `id` int(11) NOT NULL,
+  `id_responden` int(11) DEFAULT NULL,
+  `area_komplain` varchar(100) NOT NULL,
+  `identitas_pasien` varchar(150) NOT NULL,
+  `aduan` text NOT NULL,
+  `tanggal_komplain` datetime NOT NULL,
+  `tanggal_tindak_lanjut` datetime DEFAULT NULL,
+  `status` enum('baru','diproses','selesai') NOT NULL DEFAULT 'baru',
+  `keterangan_tindak_lanjut` text DEFAULT NULL,
+  `sumber_data` enum('manual','survey_otomatis') NOT NULL DEFAULT 'manual',
+  `created_by` int(11) DEFAULT NULL,
+  `updated_by` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE `komplain`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_komplain_responden` (`id_responden`),
+  ADD KEY `fk_komplain_created_by` (`created_by`),
+  ADD KEY `fk_komplain_updated_by` (`updated_by`);
+
+ALTER TABLE `komplain`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `komplain`
+  ADD CONSTRAINT `fk_komplain_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_komplain_responden` FOREIGN KEY (`id_responden`) REFERENCES `responden` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_komplain_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+

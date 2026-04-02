@@ -3,6 +3,9 @@ session_start();
 
 define('APP_NAME', 'Survei Kepuasan RSPI');
 define('BASE_URL', '/survey-kepuasan');
+define('TELEGRAM_BOT_TOKEN', '8737578114:AAGY_-sWscOr7Cph6L3f2kxxX77JrglMd4g');
+define('TELEGRAM_CHAT_ID', '@form_survey_rspi');
+define('TELEGRAM_NOTIF_ENABLED', TELEGRAM_BOT_TOKEN !== '' && TELEGRAM_CHAT_ID !== '');
 
 $host = 'localhost';
 $user = 'root';
@@ -200,6 +203,51 @@ function ambil_pertanyaan_berdasarkan_jenis(mysqli $conn, string $jenis): array
     return $kelompok;
 }
 
+function kategori_waktu_tanggap(?string $tanggalKomplain, ?string $tanggalTindakLanjut): array
+{
+    if (empty($tanggalKomplain) || empty($tanggalTindakLanjut)) {
+        return ['kode' => 'merah', 'label' => 'Merah', 'selisih_jam' => null];
+    }
+
+    try {
+        $mulai = new DateTime($tanggalKomplain);
+        $selesai = new DateTime($tanggalTindakLanjut);
+    } catch (Throwable $e) {
+        return ['kode' => 'merah', 'label' => 'Merah', 'selisih_jam' => null];
+    }
+
+    $selisihJam = ($selesai->getTimestamp() - $mulai->getTimestamp()) / 3600;
+    if ($selisihJam <= 24) {
+        return ['kode' => 'hijau', 'label' => 'Hijau', 'selisih_jam' => round($selisihJam, 2)];
+    }
+    if ($selisihJam <= 72) {
+        return ['kode' => 'kuning', 'label' => 'Kuning', 'selisih_jam' => round($selisihJam, 2)];
+    }
+
+    return ['kode' => 'merah', 'label' => 'Merah', 'selisih_jam' => round($selisihJam, 2)];
+}
+
+function badge_kategori_tanggap(array $kategori): string
+{
+    $class = 'text-bg-danger';
+    if (($kategori['kode'] ?? '') === 'hijau') {
+        $class = 'text-bg-success';
+    } elseif (($kategori['kode'] ?? '') === 'kuning') {
+        $class = 'text-bg-warning text-dark';
+    }
+
+    return '<span class="badge ' . $class . '">' . e((string) ($kategori['label'] ?? 'Merah')) . '</span>';
+}
+
+function daftar_status_komplain(): array
+{
+    return [
+        'baru' => 'Baru',
+        'diproses' => 'Diproses',
+        'selesai' => 'Selesai',
+    ];
+}
+
 function badge_nilai(int $nilai): string
 {
     if ($nilai === 3) {
@@ -211,5 +259,216 @@ function badge_nilai(int $nilai): string
     }
 
     return '<span class="badge text-bg-danger">Tidak Puas</span>';
+}
+
+function komplain_by_responden(mysqli $conn, int $idResponden): ?array
+{
+    $stmt = mysqli_prepare($conn, 'SELECT id, status, sumber_data FROM komplain WHERE id_responden = ? LIMIT 1');
+    mysqli_stmt_bind_param($stmt, 'i', $idResponden);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($result) ?: null;
+    mysqli_stmt_close($stmt);
+
+    return $row;
+}
+
+function perlu_sinkron_komplain(string $saran, array $jawaban): bool
+{
+    if (trim($saran) !== '') {
+        return true;
+    }
+
+    foreach ($jawaban as $nilai) {
+        if ((int) $nilai === 1) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function ringkas_pertanyaan_komplain(array $pertanyaan): string
+{
+    if (!$pertanyaan) {
+        return '';
+    }
+
+    $pertanyaan = array_values(array_unique(array_filter(array_map('trim', $pertanyaan))));
+    if (!$pertanyaan) {
+        return '';
+    }
+
+    $potongan = array_slice($pertanyaan, 0, 3);
+    $teks = implode(' | ', $potongan);
+
+    if (count($pertanyaan) > 3) {
+        $teks .= ' | +' . (count($pertanyaan) - 3) . ' pertanyaan lainnya';
+    }
+
+    return $teks;
+}
+
+function susun_aduan_komplain_otomatis(array $pertanyaanByJenis, array $jawaban, string $saran): string
+{
+    $mapPertanyaan = [];
+    foreach ($pertanyaanByJenis as $items) {
+        foreach ($items as $item) {
+            $mapPertanyaan[(int) $item['id']] = $item['pertanyaan'];
+        }
+    }
+
+    $tidakPuas = [];
+    foreach ($jawaban as $idPertanyaan => $nilai) {
+        if ((int) $nilai === 1 && isset($mapPertanyaan[(int) $idPertanyaan])) {
+            $tidakPuas[] = $mapPertanyaan[(int) $idPertanyaan];
+        }
+    }
+
+    $bagian = [];
+    $saran = trim($saran);
+    if ($saran !== '') {
+        $bagian[] = 'Saran / keluhan responden: ' . $saran;
+    }
+
+    $ringkasanTidakPuas = ringkas_pertanyaan_komplain($tidakPuas);
+    if ($ringkasanTidakPuas !== '') {
+        $bagian[] = 'Jawaban tidak puas terdeteksi pada: ' . $ringkasanTidakPuas;
+    }
+
+    if (!$bagian) {
+        $bagian[] = 'Komplain otomatis dari survei kepuasan pasien.';
+    }
+
+    return implode("\n\n", $bagian);
+}
+
+function sinkron_komplain_otomatis(mysqli $conn, int $idResponden, string $nama, string $lokasiAduan, string $tanggalKomplain, string $saran, array $jawaban, array $pertanyaanByJenis): ?int
+{
+    if (!perlu_sinkron_komplain($saran, $jawaban)) {
+        return null;
+    }
+
+    $existing = komplain_by_responden($conn, $idResponden);
+    if ($existing) {
+        return (int) $existing['id'];
+    }
+
+    $aduan = susun_aduan_komplain_otomatis($pertanyaanByJenis, $jawaban, $saran);
+    $status = 'baru';
+    $sumberData = 'survey_otomatis';
+    $createdBy = null;
+    $keterangan = null;
+    $tanggalTindak = null;
+
+    $stmt = mysqli_prepare($conn, 'INSERT INTO komplain (id_responden, area_komplain, identitas_pasien, aduan, tanggal_komplain, tanggal_tindak_lanjut, status, keterangan_tindak_lanjut, sumber_data, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    mysqli_stmt_bind_param($stmt, 'issssssssi', $idResponden, $lokasiAduan, $nama, $aduan, $tanggalKomplain, $tanggalTindak, $status, $keterangan, $sumberData, $createdBy);
+    mysqli_stmt_execute($stmt);
+    $komplainId = mysqli_insert_id($conn);
+    mysqli_stmt_close($stmt);
+
+    return $komplainId > 0 ? $komplainId : null;
+}
+
+function label_jenis_survei(string $jenis): string
+{
+    return $jenis === 'ranap' ? 'Rawat Inap' : 'Rawat Jalan';
+}
+
+function ringkasan_nilai_survei(array $jawaban): array
+{
+    $ringkasan = [
+        'puas' => 0,
+        'kurang_puas' => 0,
+        'tidak_puas' => 0,
+    ];
+
+    foreach ($jawaban as $nilai) {
+        $nilai = (int) $nilai;
+        if ($nilai === 3) {
+            $ringkasan['puas']++;
+            continue;
+        }
+        if ($nilai === 2) {
+            $ringkasan['kurang_puas']++;
+            continue;
+        }
+        if ($nilai === 1) {
+            $ringkasan['tidak_puas']++;
+        }
+    }
+
+    return $ringkasan;
+}
+
+function kirim_pesan_telegram(string $pesan): bool
+{
+    if (!TELEGRAM_NOTIF_ENABLED) {
+        return false;
+    }
+
+    $url = 'https://api.telegram.org/bot' . TELEGRAM_BOT_TOKEN . '/sendMessage';
+    $payload = [
+        'chat_id' => TELEGRAM_CHAT_ID,
+        'text' => $pesan,
+    ];
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query($payload),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 10,
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_errno($ch);
+        curl_close($ch);
+
+        return $curlError === 0 && $httpCode >= 200 && $httpCode < 300 && $response !== false;
+    }
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-type: application/x-www-form-urlencoded
+",
+            'content' => http_build_query($payload),
+            'timeout' => 10,
+        ],
+    ]);
+
+    $response = @file_get_contents($url, false, $context);
+
+    return $response !== false;
+}
+
+function kirim_notifikasi_telegram_survei(string $jenis, string $nama, string $jenisKelamin, string $lokasiAduan, string $tanggalSimpan, string $saran, array $jawaban): bool
+{
+    $jenisLabel = label_jenis_survei($jenis);
+    $ringkasan = ringkasan_nilai_survei($jawaban);
+    $saran = trim($saran);
+    $statusSaran = $saran !== '' ? 'Ada' : 'Tidak ada';
+
+    $pesan = implode(PHP_EOL, [
+        'Survei Kepuasan Baru',
+        'Jenis: ' . $jenisLabel,
+        'Nama Pelapor: ' . $nama,
+        'Jenis Kelamin: ' . $jenisKelamin,
+        'Lokasi Aduan: ' . $lokasiAduan,
+        'Waktu Kirim: ' . $tanggalSimpan,
+        'Total Jawaban: ' . count($jawaban),
+        'Puas: ' . $ringkasan['puas'],
+        'Kurang Puas: ' . $ringkasan['kurang_puas'],
+        'Tidak Puas: ' . $ringkasan['tidak_puas'],
+        'Saran: ' . $statusSaran,
+    ]);
+
+    if ($saran !== '') {
+        $pesan .= PHP_EOL . 'Isi Saran: ' . mb_substr($saran, 0, 300);
+    }
+
+    return kirim_pesan_telegram($pesan);
 }
 ?>

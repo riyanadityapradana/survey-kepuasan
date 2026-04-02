@@ -9,6 +9,7 @@
                 <?php if (user_punya_role('admin')) : ?>
                     <a class="nav-link <?= $activeMenu === 'pertanyaan' ? 'active' : ''; ?>" href="<?= url('admin/pertanyaan/index.php'); ?>">Kelola Pertanyaan</a>
                     <a class="nav-link <?= $activeMenu === 'users' ? 'active' : ''; ?>" href="<?= url('admin/users/index.php'); ?>">Kelola User</a>
+                    <a class="nav-link <?= $activeMenu === 'komplain' ? 'active' : ''; ?>" href="<?= url('admin/komplain/index.php'); ?>">Kelola Komplain</a>
                 <?php endif; ?>
                 <a class="nav-link <?= $activeMenu === 'ralan' ? 'active' : ''; ?>" href="<?= url('admin/hasil/ralan.php'); ?>">Rawat Jalan</a>
                 <a class="nav-link <?= $activeMenu === 'ranap' ? 'active' : ''; ?>" href="<?= url('admin/hasil/ranap.php'); ?>">Rawat Inap</a>

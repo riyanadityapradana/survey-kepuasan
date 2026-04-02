@@ -9,6 +9,7 @@ $nama = trim($_POST['nama'] ?? '');
 $jenisKelamin = trim($_POST['jenis_kelamin'] ?? '');
 $lokasiAduan = trim($_POST['lokasi_aduan'] ?? '');
 $jenis = trim($_POST['jenis'] ?? '');
+$saran = trim($_POST['saran'] ?? '');
 $jawaban = $_POST['jawaban'] ?? [];
 
 if ($nama === '' || mb_strlen($nama) > 100 || $jenisKelamin === '' || $lokasiAduan === '' || !in_array($jenis, ['ralan', 'ranap'], true) || empty($jawaban) || mb_strlen($saran) > 1000) {
@@ -36,26 +37,31 @@ foreach ($wajibJawab as $idPertanyaan) {
     }
 }
 
+$tanggalSimpan = date('Y-m-d H:i:s');
 mysqli_begin_transaction($conn);
 try {
-    $stmtResponden = mysqli_prepare($conn, 'INSERT INTO responden (nama, jenis_kelamin, lokasi_aduan, jenis, saran, tanggal) VALUES (?, ?, ?, ?, ?, NOW())');
-    mysqli_stmt_bind_param($stmtResponden, 'sssss', $nama, $jenisKelamin, $lokasiAduan, $jenis, $saran);
+    $stmtResponden = mysqli_prepare($conn, 'INSERT INTO responden (nama, jenis_kelamin, lokasi_aduan, jenis, saran, tanggal) VALUES (?, ?, ?, ?, ?, ?)');
+    mysqli_stmt_bind_param($stmtResponden, 'ssssss', $nama, $jenisKelamin, $lokasiAduan, $jenis, $saran, $tanggalSimpan);
     mysqli_stmt_execute($stmtResponden);
     $idResponden = mysqli_insert_id($conn);
     mysqli_stmt_close($stmtResponden);
 
-    $stmtJawaban = mysqli_prepare($conn, 'INSERT INTO jawaban (id_responden, id_pertanyaan, nilai, tanggal) VALUES (?, ?, ?, NOW())');
+    $stmtJawaban = mysqli_prepare($conn, 'INSERT INTO jawaban (id_responden, id_pertanyaan, nilai, tanggal) VALUES (?, ?, ?, ?)');
     foreach ($jawaban as $idPertanyaan => $nilai) {
         $idPertanyaan = (int) $idPertanyaan;
         $nilai = (int) $nilai;
         if (!in_array($idPertanyaan, $wajibJawab, true)) {
             throw new RuntimeException('Pertanyaan tidak valid.');
         }
-        mysqli_stmt_bind_param($stmtJawaban, 'iii', $idResponden, $idPertanyaan, $nilai);
+        mysqli_stmt_bind_param($stmtJawaban, 'iiis', $idResponden, $idPertanyaan, $nilai, $tanggalSimpan);
         mysqli_stmt_execute($stmtJawaban);
     }
     mysqli_stmt_close($stmtJawaban);
+
+    sinkron_komplain_otomatis($conn, $idResponden, $nama, $lokasiAduan, $tanggalSimpan, $saran, $jawaban, $pertanyaanDb);
+
     mysqli_commit($conn);
+    kirim_notifikasi_telegram_survei($jenis, $nama, $jenisKelamin, $lokasiAduan, $tanggalSimpan, $saran, $jawaban);
 } catch (Throwable $e) {
     mysqli_rollback($conn);
     set_flash('error', 'Gagal menyimpan jawaban. Silakan coba lagi.');
