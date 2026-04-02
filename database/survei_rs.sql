@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 01 Apr 2026 pada 18.30
+-- Waktu pembuatan: 02 Apr 2026 pada 15.05
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.2.12
 
@@ -37,13 +37,6 @@ CREATE TABLE `audit_logs` (
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data untuk tabel `audit_logs`
---
-
-INSERT INTO `audit_logs` (`id`, `user_id`, `aksi`, `entitas`, `entitas_id`, `deskripsi`, `created_at`) VALUES
-(1, 1, 'tambah', 'user', 3, 'Menambahkan user petugas dengan role petugas.', '2026-04-02 00:30:12');
-
 -- --------------------------------------------------------
 
 --
@@ -56,6 +49,29 @@ CREATE TABLE `jawaban` (
   `id_pertanyaan` int(11) DEFAULT NULL,
   `nilai` int(11) DEFAULT NULL,
   `tanggal` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `komplain`
+--
+
+CREATE TABLE `komplain` (
+  `id` int(11) NOT NULL,
+  `id_responden` int(11) DEFAULT NULL,
+  `area_komplain` varchar(100) NOT NULL,
+  `identitas_pasien` varchar(150) NOT NULL,
+  `aduan` text NOT NULL,
+  `tanggal_komplain` datetime NOT NULL,
+  `tanggal_tindak_lanjut` datetime DEFAULT NULL,
+  `status` enum('baru','diproses','selesai') NOT NULL DEFAULT 'baru',
+  `keterangan_tindak_lanjut` text DEFAULT NULL,
+  `sumber_data` enum('manual','survey_otomatis') NOT NULL DEFAULT 'manual',
+  `created_by` int(11) DEFAULT NULL,
+  `updated_by` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -146,6 +162,15 @@ ALTER TABLE `jawaban`
   ADD KEY `id_pertanyaan` (`id_pertanyaan`);
 
 --
+-- Indeks untuk tabel `komplain`
+--
+ALTER TABLE `komplain`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_komplain_responden` (`id_responden`),
+  ADD KEY `fk_komplain_updated_by` (`updated_by`),
+  ADD KEY `fk_komplain_created_by` (`created_by`);
+
+--
 -- Indeks untuk tabel `pertanyaan`
 --
 ALTER TABLE `pertanyaan`
@@ -171,12 +196,18 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT untuk tabel `jawaban`
 --
 ALTER TABLE `jawaban`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT untuk tabel `komplain`
+--
+ALTER TABLE `komplain`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -213,40 +244,16 @@ ALTER TABLE `audit_logs`
 ALTER TABLE `jawaban`
   ADD CONSTRAINT `jawaban_ibfk_1` FOREIGN KEY (`id_responden`) REFERENCES `responden` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `jawaban_ibfk_2` FOREIGN KEY (`id_pertanyaan`) REFERENCES `pertanyaan` (`id`) ON DELETE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `komplain`
+--
+ALTER TABLE `komplain`
+  ADD CONSTRAINT `fk_komplain_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_komplain_responden` FOREIGN KEY (`id_responden`) REFERENCES `responden` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_komplain_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
-CREATE TABLE `komplain` (
-  `id` int(11) NOT NULL,
-  `id_responden` int(11) DEFAULT NULL,
-  `area_komplain` varchar(100) NOT NULL,
-  `identitas_pasien` varchar(150) NOT NULL,
-  `aduan` text NOT NULL,
-  `tanggal_komplain` datetime NOT NULL,
-  `tanggal_tindak_lanjut` datetime DEFAULT NULL,
-  `status` enum('baru','diproses','selesai') NOT NULL DEFAULT 'baru',
-  `keterangan_tindak_lanjut` text DEFAULT NULL,
-  `sumber_data` enum('manual','survey_otomatis') NOT NULL DEFAULT 'manual',
-  `created_by` int(11) DEFAULT NULL,
-  `updated_by` int(11) DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-ALTER TABLE `komplain`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uk_komplain_responden` (`id_responden`),
-  ADD KEY `fk_komplain_created_by` (`created_by`),
-  ADD KEY `fk_komplain_updated_by` (`updated_by`);
-
-ALTER TABLE `komplain`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE `komplain`
-  ADD CONSTRAINT `fk_komplain_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_komplain_responden` FOREIGN KEY (`id_responden`) REFERENCES `responden` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_komplain_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
-
