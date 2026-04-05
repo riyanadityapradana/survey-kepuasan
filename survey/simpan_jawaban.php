@@ -74,6 +74,7 @@ try {
     mysqli_commit($conn);
     clear_old_input();
     kirim_notifikasi_telegram_survei($jenis, $nama, $jenisKelamin, $lokasiAduan, $tanggalSimpan, $saran, $jawaban);
+    kirim_notifikasi_email_survei($jenis, $nama, $jenisKelamin, $tanggungan, $lokasiAduan, $tanggalSimpan, $saran, $jawaban);
 } catch (Throwable $e) {
     mysqli_rollback($conn);
     set_old_input($dataResponden);

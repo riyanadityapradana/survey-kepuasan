@@ -19,6 +19,10 @@ if (!$conn) {
 
 mysqli_set_charset($conn, 'utf8mb4');
 
+require_once dirname(__DIR__) . '/library/src/Exception.php';
+require_once dirname(__DIR__) . '/library/src/PHPMailer.php';
+require_once dirname(__DIR__) . '/library/src/SMTP.php';
+
 function url(string $path = ''): string
 {
     return BASE_URL . ($path !== '' ? '/' . ltrim($path, '/') : '');
@@ -496,5 +500,81 @@ function kirim_notifikasi_telegram_survei(string $jenis, string $nama, string $j
     }
 
     return kirim_pesan_telegram($pesan);
+}
+
+function kirim_email(string $subject, string $htmlBody, ?string $plainBody = null): bool
+{
+    if (!MAIL_NOTIF_ENABLED) {
+        return false;
+    }
+
+    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+
+    try {
+        $mail->isSMTP();
+        $mail->Host = MAIL_HOST;
+        $mail->SMTPAuth = true;
+        $mail->Username = MAIL_USERNAME;
+        $mail->Password = MAIL_PASSWORD;
+        $mail->SMTPSecure = MAIL_ENCRYPTION;
+        $mail->Port = MAIL_PORT;
+        $mail->CharSet = 'UTF-8';
+
+        $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
+        $mail->addAddress(MAIL_TO_ADDRESS, MAIL_TO_NAME);
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body = $htmlBody;
+        $mail->AltBody = $plainBody ?? trim(strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>'], PHP_EOL, $htmlBody)));
+
+        return $mail->send();
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+function kirim_notifikasi_email_survei(string $jenis, string $nama, string $jenisKelamin, string $tanggungan, string $lokasiAduan, string $tanggalSimpan, string $saran, array $jawaban): bool
+{
+    $jenisLabel = label_jenis_survei($jenis);
+    $ringkasan = ringkasan_nilai_survei($jawaban);
+    $saran = trim($saran);
+
+    $subject = 'Survei Kepuasan Baru - ' . $jenisLabel;
+    $htmlBody = '
+        <div style="font-family:Segoe UI,Tahoma,sans-serif;color:#1f3550;line-height:1.6">
+            <h2 style="margin-bottom:8px;color:#0d6efd;">Survei Kepuasan Baru</h2>
+            <p style="margin-top:0;">Ada survei baru yang baru saja masuk ke sistem.</p>
+            <table cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%;max-width:720px;">
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Jenis Survei</strong></td><td style="border:1px solid #d8e6ff;">' . e($jenisLabel) . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Nama Pelapor</strong></td><td style="border:1px solid #d8e6ff;">' . e($nama) . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Jenis Kelamin</strong></td><td style="border:1px solid #d8e6ff;">' . e($jenisKelamin) . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Tanggungan</strong></td><td style="border:1px solid #d8e6ff;">' . e($tanggungan) . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Lokasi Aduan</strong></td><td style="border:1px solid #d8e6ff;">' . e($lokasiAduan) . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Waktu Kirim</strong></td><td style="border:1px solid #d8e6ff;">' . e($tanggalSimpan) . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Total Jawaban</strong></td><td style="border:1px solid #d8e6ff;">' . count($jawaban) . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Puas</strong></td><td style="border:1px solid #d8e6ff;">' . $ringkasan['puas'] . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Kurang Puas</strong></td><td style="border:1px solid #d8e6ff;">' . $ringkasan['kurang_puas'] . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Tidak Puas</strong></td><td style="border:1px solid #d8e6ff;">' . $ringkasan['tidak_puas'] . '</td></tr>
+                <tr><td style="border:1px solid #d8e6ff;"><strong>Saran</strong></td><td style="border:1px solid #d8e6ff;">' . ($saran !== '' ? nl2br(e($saran)) : '-') . '</td></tr>
+            </table>
+            <p style="margin-top:16px;font-size:12px;color:#60758f;">Email ini dikirim otomatis oleh sistem survei.</p>
+        </div>';
+
+    $plainBody = implode(PHP_EOL, [
+        'Survei Kepuasan Baru',
+        'Jenis Survei: ' . $jenisLabel,
+        'Nama Pelapor: ' . $nama,
+        'Jenis Kelamin: ' . $jenisKelamin,
+        'Tanggungan: ' . $tanggungan,
+        'Lokasi Aduan: ' . $lokasiAduan,
+        'Waktu Kirim: ' . $tanggalSimpan,
+        'Total Jawaban: ' . count($jawaban),
+        'Puas: ' . $ringkasan['puas'],
+        'Kurang Puas: ' . $ringkasan['kurang_puas'],
+        'Tidak Puas: ' . $ringkasan['tidak_puas'],
+        'Saran: ' . ($saran !== '' ? $saran : '-'),
+    ]);
+
+    return kirim_email($subject, $htmlBody, $plainBody);
 }
 ?>
