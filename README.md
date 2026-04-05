@@ -15,7 +15,9 @@ Aplikasi web `PHP Native + MySQL` untuk survei kepuasan pasien rumah sakit. Proj
 ## Struktur Folder
 
 - `config/koneksi.php`
-  Koneksi database, session, helper aplikasi, helper komplain, dan helper notifikasi Telegram.
+  Bootstrap koneksi database, session, dan loader konfigurasi aplikasi.
+- `.env`
+  Menyimpan konfigurasi lokal seperti database dan token Telegram.
 - `auth/login.php`
   Form login admin.
 - `auth/proses_login.php`
@@ -47,11 +49,12 @@ Aplikasi web `PHP Native + MySQL` untuk survei kepuasan pasien rumah sakit. Proj
 
 ## Cara Menjalankan Project
 
-1. Buat database dengan nama `survei_rs`.
-2. Import file `database/survei_rs.sql` ke MySQL.
-3. Pastikan konfigurasi database di `config/koneksi.php` sudah sesuai.
-4. Jalankan Apache dan MySQL dari XAMPP.
-5. Buka aplikasi di browser:
+1. Buat file `.env` dari `.env.example`.
+2. Buat database dengan nama `survei_rs`.
+3. Import file `database/survei_rs.sql` ke MySQL.
+4. Sesuaikan konfigurasi database dan Telegram di file `.env`.
+5. Jalankan Apache dan MySQL dari XAMPP.
+6. Buka aplikasi di browser:
 
 ```text
 http://localhost/survey-kepuasan/
@@ -170,55 +173,54 @@ Jika nanti username channel berubah, ubah juga nilainya di file config project.
 
 ## Konfigurasi Telegram di Project
 
-Konfigurasi utama ada di file:
+Konfigurasi utama sekarang memakai file:
 
-- `config/koneksi.php`
+- `.env`
 
 Bagian yang dipakai untuk Telegram adalah:
 
 ```php
-define('TELEGRAM_BOT_TOKEN', '');
-define('TELEGRAM_CHAT_ID', '@form_survey_rspi');
-define('TELEGRAM_NOTIF_ENABLED', TELEGRAM_BOT_TOKEN !== '' && TELEGRAM_CHAT_ID !== '');
+TELEGRAM_BOT_TOKEN=""
+TELEGRAM_CHAT_ID="@form_survey_rspi"
 ```
 
 ### Cara Mengisi Token Bot
 
 Buka file:
 
-- `config/koneksi.php`
+- `.env`
 
 Lalu ubah:
 
-```php
-define('TELEGRAM_BOT_TOKEN', '');
+```env
+TELEGRAM_BOT_TOKEN=""
 ```
 
 Menjadi seperti ini:
 
-```php
-define('TELEGRAM_BOT_TOKEN', 'ISI_TOKEN_BOT_KAMU_DI_SINI');
+```env
+TELEGRAM_BOT_TOKEN="ISI_TOKEN_BOT_KAMU_DI_SINI"
 ```
 
 Contoh:
 
-```php
-define('TELEGRAM_BOT_TOKEN', '123456789:AAExampleTokenTelegramBot');
+```env
+TELEGRAM_BOT_TOKEN="123456789:AAExampleTokenTelegramBot"
 ```
 
 Jika channel Telegram berubah, ubah juga bagian ini:
 
-```php
-define('TELEGRAM_CHAT_ID', '@form_survey_rspi');
+```env
+TELEGRAM_CHAT_ID="@form_survey_rspi"
 ```
 
 ## Bagian Kode Yang Sudah Ditambahkan Untuk Telegram
 
 Fitur notifikasi Telegram sudah dipasang di dua area utama.
 
-### 1. File `config/koneksi.php`
+### 1. File `config/app.php` dan `.env`
 
-Di file ini ditambahkan:
+Di bagian ini digunakan:
 
 - Konstanta Telegram:
   - `TELEGRAM_BOT_TOKEN`
@@ -284,7 +286,7 @@ Kedua form tersebut mengarah ke proses yang sama:
 
 ## Cara Uji Notifikasi Telegram
 
-1. Isi `TELEGRAM_BOT_TOKEN` di `config/koneksi.php`.
+1. Isi `TELEGRAM_BOT_TOKEN` di file `.env`.
 2. Pastikan bot sudah menjadi admin di channel `@form_survey_rspi`.
 3. Buka aplikasi:
 
@@ -303,7 +305,7 @@ http://localhost/survey-kepuasan/
 
 Periksa hal berikut:
 
-1. Token bot di `config/koneksi.php` sudah benar.
+1. Token bot di file `.env` sudah benar.
 2. Username channel di `TELEGRAM_CHAT_ID` sudah benar.
 3. Bot sudah ditambahkan sebagai admin channel.
 4. Server bisa mengakses internet keluar ke `api.telegram.org`.
@@ -316,8 +318,10 @@ Catatan:
 
 ## File Yang Terkait Dengan Fitur Telegram
 
-- `config/koneksi.php`
-  Tempat konfigurasi token, target channel, dan helper kirim Telegram.
+- `.env`
+  Tempat konfigurasi token bot dan target channel Telegram.
+- `config/app.php`
+  Membaca nilai Telegram dari `.env` dan menyiapkan konstanta aplikasi.
 - `survey/simpan_jawaban.php`
   Tempat pemanggilan notifikasi setelah survei berhasil tersimpan.
 - `survey/form_ralan.php`

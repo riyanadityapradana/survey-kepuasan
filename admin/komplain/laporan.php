@@ -15,10 +15,13 @@ mysqli_stmt_bind_param($stmt, 'ii', $bulanInt, $tahunInt);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 $rows = [];
-$rekap = ['hijau' => 0, 'kuning' => 0, 'merah' => 0];
+$rekap = ['hijau' => 0, 'kuning' => 0, 'merah' => 0, 'belum' => 0];
 while ($row = mysqli_fetch_assoc($result)) {
     $row['kategori_tanggap'] = kategori_waktu_tanggap($row['tanggal_komplain'], $row['tanggal_tindak_lanjut']);
-    $rekap[$row['kategori_tanggap']['kode']]++;
+    $kodeKategori = $row['kategori_tanggap']['kode'] ?? 'belum';
+    if (array_key_exists($kodeKategori, $rekap)) {
+        $rekap[$kodeKategori]++;
+    }
     $rows[] = $row;
 }
 mysqli_stmt_close($stmt);
@@ -43,9 +46,10 @@ require_once __DIR__ . '/../../includes/admin_nav.php';
                 <div class="filter-actions"><button type="submit" class="btn btn-rs-primary"><i class="fa-solid fa-filter me-2"></i>Tampilkan</button></div>
             </form>
             <div class="row g-3 mb-4">
-                <div class="col-md-4"><div class="mini-stat"><span>Hijau (<= 24 jam)</span><strong><?= $rekap['hijau']; ?></strong></div></div>
-                <div class="col-md-4"><div class="mini-stat"><span>Kuning (<= 72 jam)</span><strong><?= $rekap['kuning']; ?></strong></div></div>
-                <div class="col-md-4"><div class="mini-stat"><span>Merah (> 72 jam / belum ditindaklanjuti)</span><strong><?= $rekap['merah']; ?></strong></div></div>
+                <div class="col-md-3"><div class="mini-stat"><span>Hijau (<= 24 jam)</span><strong><?= $rekap['hijau']; ?></strong></div></div>
+                <div class="col-md-3"><div class="mini-stat"><span>Kuning (<= 72 jam)</span><strong><?= $rekap['kuning']; ?></strong></div></div>
+                <div class="col-md-3"><div class="mini-stat"><span>Merah (> 72 jam)</span><strong><?= $rekap['merah']; ?></strong></div></div>
+                <div class="col-md-3"><div class="mini-stat"><span>Belum Ditindaklanjuti</span><strong><?= $rekap['belum']; ?></strong></div></div>
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered align-middle laporan-komplain-table">

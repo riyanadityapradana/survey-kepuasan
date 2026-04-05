@@ -1,23 +1,4 @@
-﻿<?php
-session_start();
-
-require_once __DIR__ . '/env.php';
-load_env_file(dirname(__DIR__) . '/.env');
-require_once __DIR__ . '/app.php';
-date_default_timezone_set(APP_TIMEZONE);
-
-$host = env('DB_HOST', 'localhost');
-$user = env('DB_USERNAME', 'root');
-$pass = env('DB_PASSWORD', '');
-$db   = env('DB_DATABASE', 'survei_rs');
-
-$conn = mysqli_connect($host, $user, $pass, $db);
-
-if (!$conn) {
-    die('Koneksi database gagal: ' . mysqli_connect_error());
-}
-
-mysqli_set_charset($conn, 'utf8mb4');
+<?php
 
 function url(string $path = ''): string
 {
@@ -230,14 +211,14 @@ function ambil_pertanyaan_berdasarkan_jenis(mysqli $conn, string $jenis): array
 function kategori_waktu_tanggap(?string $tanggalKomplain, ?string $tanggalTindakLanjut): array
 {
     if (empty($tanggalKomplain) || empty($tanggalTindakLanjut)) {
-        return ['kode' => 'belum', 'label' => '-', 'selisih_jam' => null];
+        return ['kode' => 'merah', 'label' => 'Merah', 'selisih_jam' => null];
     }
 
     try {
         $mulai = new DateTime($tanggalKomplain);
         $selesai = new DateTime($tanggalTindakLanjut);
     } catch (Throwable $e) {
-        return ['kode' => 'belum', 'label' => '-', 'selisih_jam' => null];
+        return ['kode' => 'merah', 'label' => 'Merah', 'selisih_jam' => null];
     }
 
     $selisihJam = ($selesai->getTimestamp() - $mulai->getTimestamp()) / 3600;
@@ -253,16 +234,14 @@ function kategori_waktu_tanggap(?string $tanggalKomplain, ?string $tanggalTindak
 
 function badge_kategori_tanggap(array $kategori): string
 {
-    $class = 'text-bg-secondary';
+    $class = 'text-bg-danger';
     if (($kategori['kode'] ?? '') === 'hijau') {
         $class = 'text-bg-success';
     } elseif (($kategori['kode'] ?? '') === 'kuning') {
         $class = 'text-bg-warning text-dark';
-    } elseif (($kategori['kode'] ?? '') === 'merah') {
-        $class = 'text-bg-danger';
     }
 
-    return '<span class="badge ' . $class . '">' . e((string) ($kategori['label'] ?? '-')) . '</span>';
+    return '<span class="badge ' . $class . '">' . e((string) ($kategori['label'] ?? 'Merah')) . '</span>';
 }
 
 function daftar_status_komplain(): array
@@ -458,8 +437,7 @@ function kirim_pesan_telegram(string $pesan): bool
     $context = stream_context_create([
         'http' => [
             'method' => 'POST',
-            'header' => "Content-type: application/x-www-form-urlencoded
-",
+            'header' => "Content-type: application/x-www-form-urlencoded\r\n",
             'content' => http_build_query($payload),
             'timeout' => 10,
         ],
@@ -497,4 +475,3 @@ function kirim_notifikasi_telegram_survei(string $jenis, string $nama, string $j
 
     return kirim_pesan_telegram($pesan);
 }
-?>

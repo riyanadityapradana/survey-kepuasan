@@ -12,13 +12,22 @@ $lokasiAduan = trim($_POST['lokasi_aduan'] ?? '');
 $jenis = trim($_POST['jenis'] ?? '');
 $saran = trim($_POST['saran'] ?? '');
 $jawaban = $_POST['jawaban'] ?? [];
+$dataResponden = [
+    'nama' => $nama,
+    'jenis_kelamin' => $jenisKelamin,
+    'tanggungan' => $tanggungan,
+    'lokasi_aduan' => $lokasiAduan,
+    'saran' => $saran,
+];
 
 if ($nama === '' || mb_strlen($nama) > 100 || $jenisKelamin === '' || $tanggungan === '' || mb_strlen($tanggungan) > 50 || $lokasiAduan === '' || mb_strlen($lokasiAduan) > 250 || !in_array($jenis, ['ralan', 'ranap'], true) || empty($jawaban) || mb_strlen($saran) > 1000) {
+    set_old_input($dataResponden);
     set_flash('error', 'Semua data responden dan jawaban wajib diisi.');
     redirect_ke($jenis === 'ranap' ? 'survey/form_ranap.php' : 'survey/form_ralan.php');
 }
 
 if (!in_array($jenisKelamin, ['Laki-Laki', 'Perempuan'], true)) {
+    set_old_input($dataResponden);
     set_flash('error', 'Data jenis kelamin tidak valid.');
     redirect_ke($jenis === 'ranap' ? 'survey/form_ranap.php' : 'survey/form_ralan.php');
 }
@@ -33,6 +42,7 @@ foreach ($pertanyaanDb as $items) {
 
 foreach ($wajibJawab as $idPertanyaan) {
     if (!isset($jawaban[$idPertanyaan]) || !in_array((int) $jawaban[$idPertanyaan], [1, 2, 3], true)) {
+        set_old_input($dataResponden);
         set_flash('error', 'Semua pertanyaan wajib dijawab.');
         redirect_ke($jenis === 'ranap' ? 'survey/form_ranap.php' : 'survey/form_ralan.php');
     }
@@ -62,9 +72,11 @@ try {
     sinkron_komplain_otomatis($conn, $idResponden, $nama, $lokasiAduan, $tanggalSimpan, $saran, $jawaban, $pertanyaanDb);
 
     mysqli_commit($conn);
+    clear_old_input();
     kirim_notifikasi_telegram_survei($jenis, $nama, $jenisKelamin, $lokasiAduan, $tanggalSimpan, $saran, $jawaban);
 } catch (Throwable $e) {
     mysqli_rollback($conn);
+    set_old_input($dataResponden);
     set_flash('error', 'Gagal menyimpan jawaban. Silakan coba lagi.');
     redirect_ke($jenis === 'ranap' ? 'survey/form_ranap.php' : 'survey/form_ralan.php');
 }

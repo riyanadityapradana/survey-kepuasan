@@ -97,6 +97,26 @@ require_once __DIR__ . '/../includes/admin_nav.php';
         </div>
     </div>
 
+    <div class="card google-card dashboard-banner mb-4 border-0">
+        <div class="card-body p-4 p-lg-5">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-8">
+                    <span class="section-kicker mb-2">Pusat Kontrol</span>
+                    <h3 class="fw-bold mb-2">Semua ringkasan utama kini lebih mudah dipantau dari satu layar.</h3>
+                    <p class="text-muted mb-0">Gunakan dashboard ini untuk melihat tren survei, status notifikasi Telegram, dan jalur cepat ke rekap rawat jalan maupun rawat inap.</p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="dashboard-chip-grid">
+                        <div class="dashboard-chip"><strong><?= (int) $stats['responden']; ?></strong><span>Total responden</span></div>
+                        <div class="dashboard-chip"><strong><?= user_punya_role('admin') ? 'Admin' : 'Petugas'; ?></strong><span>Role aktif</span></div>
+                        <div class="dashboard-chip"><strong><?= TELEGRAM_NOTIF_ENABLED ? 'Aktif' : 'Off'; ?></strong><span>Status Telegram</span></div>
+                        <div class="dashboard-chip"><strong><?= date('d M Y'); ?></strong><span>Ringkasan hari ini</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4 mb-4">
         <div class="col-md-3"><div class="card google-card stat-card h-100"><div class="card-body"><span>Total Pertanyaan</span><h3><?= $stats['pertanyaan']; ?></h3><i class="fa-solid fa-circle-question"></i></div></div></div>
         <div class="col-md-3"><div class="card google-card stat-card h-100"><div class="card-body"><span>Total Responden</span><h3><?= $stats['responden']; ?></h3><i class="fa-solid fa-users"></i></div></div></div>

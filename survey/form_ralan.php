@@ -6,6 +6,7 @@ $judul = 'Survei Kepuasan Rawat Jalan';
 $subjudul = 'Bantu kami meningkatkan mutu pelayanan rawat jalan dengan mengisi form berikut.';
 $kelompokPertanyaan = ambil_pertanyaan_berdasarkan_jenis($conn, $jenis);
 $error = get_flash('error');
+$oldInput = pull_old_input();
 $pageTitle = $judul;
 $activePublic = 'ralan';
 require_once __DIR__ . '/../includes/header.php';
@@ -27,20 +28,28 @@ $inlineScripts = ["const form = document.querySelector('[data-survey-form]'); if
     </div>
 
     <?php if ($error) : ?><div class="alert alert-danger"><?= e($error); ?></div><?php endif; ?>
+    <div class="survey-meta-grid mb-4">
+        <div class="survey-meta-card"><strong>Durasi singkat</strong><span>Pengisian dirancang tetap cepat dan nyaman.</span></div>
+        <div class="survey-meta-card"><strong>Jawaban sederhana</strong><span>Setiap pertanyaan cukup pilih satu nilai yang paling sesuai.</span></div>
+        <div class="survey-meta-card"><strong>Tindak lanjut lebih jelas</strong><span>Lokasi layanan dan saran membantu admin membaca konteks keluhan.</span></div>
+    </div>
 
     <?php if (empty($kelompokPertanyaan)) : ?>
         <div class="alert alert-warning">Belum ada pertanyaan untuk survei rawat jalan.</div>
     <?php else : ?>
         <form action="<?= url('survey/simpan_jawaban.php'); ?>" method="post" data-survey-form>
             <input type="hidden" name="jenis" value="ralan">
-            <div class="card google-card mb-4">
+            <div class="card google-card mb-4 survey-form-shell">
                 <div class="card-body p-4">
-                    <h5 class="fw-semibold mb-3">Data Responden</h5>
+                    <div class="section-heading mb-4">
+                        <h5 class="fw-semibold mb-1">Data Responden</h5>
+                        <p class="text-muted mb-0">Isikan identitas dasar pelapor sebelum menjawab pertanyaan survei.</p>
+                    </div>
                     <div class="row g-3">
-                        <div class="col-md-6"><label class="form-label">Nama Keluarga Pasien/Pelapor</label><input type="text" name="nama" class="form-control" required maxlength="100"></div>
-                        <div class="col-md-6"><label class="form-label">Jenis Kelamin</label><select name="jenis_kelamin" class="form-select" required><option value="">Pilih Jenis Kelamin</option><option value="Laki-Laki">Laki-Laki</option><option value="Perempuan">Perempuan</option></select></div>
-                        <div class="col-md-6"><label class="form-label">Apakah anda pasien tanggungan ?</label><input type="text" name="tanggungan" class="form-control" required maxlength="50" placeholder="Contoh: BPJS, Umum, Asuransi"></div>
-                        <div class="col-md-6"><label class="form-label">Lokasi Aduan / Layanan</label><input type="text" name="lokasi_aduan" class="form-control" required maxlength="250" placeholder='Contoh "Lantai 3 atau Lantai 1 atau Poli Kandungan"'></div>
+                        <div class="col-md-6"><label class="form-label">Nama Keluarga Pasien/Pelapor</label><input type="text" name="nama" class="form-control input-soft" required maxlength="100" value="<?= e(old_input($oldInput, 'nama')); ?>"></div>
+                        <div class="col-md-6"><label class="form-label">Jenis Kelamin</label><select name="jenis_kelamin" class="form-select input-soft" required><option value="">Pilih Jenis Kelamin</option><option value="Laki-Laki" <?= old_input($oldInput, 'jenis_kelamin') === 'Laki-Laki' ? 'selected' : ''; ?>>Laki-Laki</option><option value="Perempuan" <?= old_input($oldInput, 'jenis_kelamin') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option></select></div>
+                        <div class="col-md-6"><label class="form-label">Tanggungan Pasien</label><input type="text" name="tanggungan" class="form-control input-soft" required maxlength="50" placeholder="Contoh: BPJS, Umum, Asuransi" value="<?= e(old_input($oldInput, 'tanggungan')); ?>"></div>
+                        <div class="col-md-6"><label class="form-label">Lokasi Aduan / Layanan</label><input type="text" name="lokasi_aduan" class="form-control input-soft" required maxlength="250" placeholder='Contoh "Lantai 3 atau Lantai 1 atau Poli Kandungan"' value="<?= e(old_input($oldInput, 'lokasi_aduan')); ?>"></div>
                     </div>
                 </div>
             </div>
@@ -54,7 +63,7 @@ $inlineScripts = ["const form = document.querySelector('[data-survey-form]'); if
                         <p class="text-muted mb-0">Kolom ini opsional. Silakan isi jika ada saran tambahan untuk pelayanan kami.</p>
                     </div>
                     <label class="form-label fw-medium d-block mb-3">Tulis saran Anda dalam kolom di bawah ini</label>
-                    <textarea name="saran" class="form-control form-textarea-large" rows="5" maxlength="1000" placeholder="Tuliskan saran, kritik, atau masukan tambahan di sini..."></textarea>
+                    <textarea name="saran" class="form-control form-textarea-large input-soft" rows="5" maxlength="1000" placeholder="Tuliskan saran, kritik, atau masukan tambahan di sini..."><?= e(old_input($oldInput, 'saran')); ?></textarea>
                 </div>
             </div>
             <div class="text-end"><button type="submit" class="btn btn-rs-primary btn-lg"><i class="fa-solid fa-paper-plane me-2"></i>Kirim Jawaban</button></div>
