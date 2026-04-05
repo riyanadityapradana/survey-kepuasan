@@ -58,7 +58,7 @@ function ambil_data_grafik(mysqli $conn, string $jenis): array
 
 $stats = hitung_ringkasan($conn);
 $pertanyaanBaru = mysqli_query($conn, 'SELECT jenis, kategori, pertanyaan FROM pertanyaan ORDER BY id DESC LIMIT 5');
-$respondenBaru = mysqli_query($conn, 'SELECT nama, jenis_kelamin, lokasi_aduan, saran, jenis, tanggal FROM responden ORDER BY tanggal DESC, id DESC LIMIT 5');
+$respondenBaru = mysqli_query($conn, 'SELECT nama, jenis_kelamin, tanggungan, lokasi_aduan, saran, jenis, tanggal FROM responden ORDER BY tanggal DESC, id DESC LIMIT 5');
 $auditLogs = mysqli_query($conn, 'SELECT a.aksi, a.entitas, a.deskripsi, a.created_at, u.username FROM audit_logs a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT 8');
 
 $grafikRalan = ambil_data_grafik($conn, 'ralan');
@@ -130,7 +130,7 @@ require_once __DIR__ . '/../includes/admin_nav.php';
 
     <div class="row g-4 mb-4">
         <div class="col-lg-6"><div class="card google-card h-100"><div class="card-header bg-white border-0 pt-4 pb-0 px-4"><h5 class="fw-semibold mb-0">Aktivitas Audit Terbaru</h5></div><div class="card-body p-4"><?php if (!$auditLogs || mysqli_num_rows($auditLogs) === 0) : ?><div class="empty-state">Belum ada aktivitas audit.</div><?php else : ?><div class="timeline-list"><?php while ($log = mysqli_fetch_assoc($auditLogs)) : ?><div class="timeline-item"><strong><?= e($log['username'] ?? 'Sistem'); ?></strong><span class="small text-muted d-block mb-1"><?= date('d-m-Y H:i', strtotime($log['created_at'])); ?></span><p class="mb-0"><?= e($log['deskripsi'] ?: ($log['aksi'] . ' ' . $log['entitas'])); ?></p></div><?php endwhile; ?></div><?php endif; ?></div></div></div>
-        <div class="col-lg-6"><div class="card google-card h-100"><div class="card-header bg-white border-0 pt-4 pb-0 px-4"><h5 class="fw-semibold mb-0">Responden Terbaru</h5></div><div class="card-body p-4"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Nama</th><th>JK</th><th>Lokasi Aduan</th><th>Jenis</th><th>Tanggal</th></tr></thead><tbody><?php while ($row = mysqli_fetch_assoc($respondenBaru)) : ?><tr><td><?= e($row['nama']); ?></td><td><?= e($row['jenis_kelamin']); ?></td><td><?= e($row['lokasi_aduan']); ?></td><td><?= strtoupper(e($row['jenis'])); ?></td><td><?= date('d-m-Y H:i', strtotime($row['tanggal'])); ?></td></tr><?php endwhile; ?></tbody></table></div></div></div></div>
+        <div class="col-lg-6"><div class="card google-card h-100"><div class="card-header bg-white border-0 pt-4 pb-0 px-4"><h5 class="fw-semibold mb-0">Responden Terbaru</h5></div><div class="card-body p-4"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Nama</th><th>JK</th><th>Tanggungan</th><th>Lokasi Aduan</th><th>Jenis</th><th>Tanggal</th></tr></thead><tbody><?php while ($row = mysqli_fetch_assoc($respondenBaru)) : ?><tr><td><?= e($row['nama']); ?></td><td><?= e($row['jenis_kelamin']); ?></td><td><?= e($row['tanggungan']); ?></td><td><?= e($row['lokasi_aduan']); ?></td><td><?= strtoupper(e($row['jenis'])); ?></td><td><?= date('d-m-Y H:i', strtotime($row['tanggal'])); ?></td></tr><?php endwhile; ?></tbody></table></div></div></div></div>
     </div>
 
     <div class="row g-4">

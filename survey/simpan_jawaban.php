@@ -7,18 +7,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $nama = trim($_POST['nama'] ?? '');
 $jenisKelamin = trim($_POST['jenis_kelamin'] ?? '');
+$tanggungan = trim($_POST['tanggungan'] ?? '');
 $lokasiAduan = trim($_POST['lokasi_aduan'] ?? '');
 $jenis = trim($_POST['jenis'] ?? '');
 $saran = trim($_POST['saran'] ?? '');
 $jawaban = $_POST['jawaban'] ?? [];
 
-if ($nama === '' || mb_strlen($nama) > 100 || $jenisKelamin === '' || $lokasiAduan === '' || !in_array($jenis, ['ralan', 'ranap'], true) || empty($jawaban) || mb_strlen($saran) > 1000) {
+if ($nama === '' || mb_strlen($nama) > 100 || $jenisKelamin === '' || $tanggungan === '' || mb_strlen($tanggungan) > 50 || $lokasiAduan === '' || mb_strlen($lokasiAduan) > 250 || !in_array($jenis, ['ralan', 'ranap'], true) || empty($jawaban) || mb_strlen($saran) > 1000) {
     set_flash('error', 'Semua data responden dan jawaban wajib diisi.');
     redirect_ke($jenis === 'ranap' ? 'survey/form_ranap.php' : 'survey/form_ralan.php');
 }
 
-if (!in_array($jenisKelamin, ['Laki-Laki', 'Perempuan'], true) || !in_array($lokasiAduan, daftar_lokasi_aduan(), true)) {
-    set_flash('error', 'Data jenis kelamin atau lokasi aduan tidak valid.');
+if (!in_array($jenisKelamin, ['Laki-Laki', 'Perempuan'], true)) {
+    set_flash('error', 'Data jenis kelamin tidak valid.');
     redirect_ke($jenis === 'ranap' ? 'survey/form_ranap.php' : 'survey/form_ralan.php');
 }
 
@@ -40,8 +41,8 @@ foreach ($wajibJawab as $idPertanyaan) {
 $tanggalSimpan = date('Y-m-d H:i:s');
 mysqli_begin_transaction($conn);
 try {
-    $stmtResponden = mysqli_prepare($conn, 'INSERT INTO responden (nama, jenis_kelamin, lokasi_aduan, jenis, saran, tanggal) VALUES (?, ?, ?, ?, ?, ?)');
-    mysqli_stmt_bind_param($stmtResponden, 'ssssss', $nama, $jenisKelamin, $lokasiAduan, $jenis, $saran, $tanggalSimpan);
+    $stmtResponden = mysqli_prepare($conn, 'INSERT INTO responden (nama, jenis_kelamin, tanggungan, lokasi_aduan, jenis, saran, tanggal) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    mysqli_stmt_bind_param($stmtResponden, 'sssssss', $nama, $jenisKelamin, $tanggungan, $lokasiAduan, $jenis, $saran, $tanggalSimpan);
     mysqli_stmt_execute($stmtResponden);
     $idResponden = mysqli_insert_id($conn);
     mysqli_stmt_close($stmtResponden);

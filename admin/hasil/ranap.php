@@ -65,7 +65,7 @@ $totalPages = max(1, (int) ceil($totalRows / $perPage));
 $page = min($page, $totalPages);
 $offset = ($page - 1) * $perPage;
 
-$dataSql = 'SELECT DISTINCT r.id, r.nama, r.jenis_kelamin, r.lokasi_aduan, r.saran, r.tanggal FROM responden r LEFT JOIN jawaban j ON j.id_responden = r.id LEFT JOIN pertanyaan p ON p.id = j.id_pertanyaan WHERE ' . $whereSql . ' ORDER BY r.tanggal DESC, r.id DESC LIMIT ? OFFSET ?';
+$dataSql = 'SELECT DISTINCT r.id, r.nama, r.jenis_kelamin, r.tanggungan, r.lokasi_aduan, r.saran, r.tanggal FROM responden r LEFT JOIN jawaban j ON j.id_responden = r.id LEFT JOIN pertanyaan p ON p.id = j.id_pertanyaan WHERE ' . $whereSql . ' ORDER BY r.tanggal DESC, r.id DESC LIMIT ? OFFSET ?';
 $stmtData = mysqli_prepare($conn, $dataSql);
 $dataParams = $detailParams;
 $dataParams[] = $perPage;
@@ -172,16 +172,17 @@ require_once __DIR__ . '/../../includes/admin_nav.php';
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle responden-summary-table">
-                    <thead><tr><th width="170">Tanggal</th><th>Nama</th><th width="160">Jenis Kelamin</th><th width="220">Lokasi Aduan</th><th width="280">Aksi</th></tr></thead>
+                    <thead><tr><th width="170">Tanggal</th><th>Nama</th><th width="160">Jenis Kelamin</th><th width="160">Tanggungan</th><th width="220">Lokasi Aduan</th><th width="280">Aksi</th></tr></thead>
                     <tbody>
                         <?php if (!$respondents) : ?>
-                            <tr><td colspan="5" class="text-center text-muted py-4">Tidak ada responden yang cocok dengan filter.</td></tr>
+                            <tr><td colspan="6" class="text-center text-muted py-4">Tidak ada responden yang cocok dengan filter.</td></tr>
                         <?php else : ?>
                             <?php foreach ($respondents as $detail) : ?>
                                 <tr>
                                     <td><?= date('d-m-Y H:i', strtotime($detail['tanggal'])); ?></td>
                                     <td><?= e($detail['nama']); ?></td>
                                     <td><?= e($detail['jenis_kelamin']); ?></td>
+                                    <td><?= e($detail['tanggungan']); ?></td>
                                     <td><?= e($detail['lokasi_aduan']); ?></td>
                                     <td>
                                         <div class="d-flex gap-2 flex-wrap">
@@ -212,7 +213,7 @@ require_once __DIR__ . '/../../includes/admin_nav.php';
             <div class="modal-content border-0 google-card">
                 <div class="modal-header border-0 pb-0"><div><h5 class="modal-title fw-bold mb-1">Detail Jawaban Responden</h5><p class="text-muted small mb-0">Rawat Inap</p></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body pt-3">
-                    <div class="detail-meta-grid mb-4"><div class="detail-meta-card"><span>Tanggal</span><strong><?= date('d-m-Y H:i', strtotime($detail['tanggal'])); ?></strong></div><div class="detail-meta-card"><span>Nama</span><strong><?= e($detail['nama']); ?></strong></div><div class="detail-meta-card"><span>Jenis Kelamin</span><strong><?= e($detail['jenis_kelamin']); ?></strong></div><div class="detail-meta-card"><span>Lokasi Aduan</span><strong><?= e($detail['lokasi_aduan']); ?></strong></div></div>
+                    <div class="detail-meta-grid mb-4"><div class="detail-meta-card"><span>Tanggal</span><strong><?= date('d-m-Y H:i', strtotime($detail['tanggal'])); ?></strong></div><div class="detail-meta-card"><span>Nama</span><strong><?= e($detail['nama']); ?></strong></div><div class="detail-meta-card"><span>Jenis Kelamin</span><strong><?= e($detail['jenis_kelamin']); ?></strong></div><div class="detail-meta-card"><span>Tanggungan</span><strong><?= e($detail['tanggungan']); ?></strong></div><div class="detail-meta-card"><span>Lokasi Aduan</span><strong><?= e($detail['lokasi_aduan']); ?></strong></div></div>
                     <?php if (!empty($detail['saran'])) : ?>
                         <div class="detail-list-item mb-4">
                             <div class="section-heading mb-3">

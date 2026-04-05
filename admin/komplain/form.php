@@ -11,6 +11,7 @@ $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 $idResponden = (int) ($_GET['id_responden'] ?? $_POST['id_responden'] ?? 0);
 $isEdit = basename($_SERVER['PHP_SELF']) === 'edit.php';
 $returnUrl = trim($_GET['return'] ?? $_POST['return'] ?? url('admin/komplain/index.php'));
+$responden = null;
 $formData = [
     'area_komplain' => '',
     'identitas_pasien' => '',
@@ -53,7 +54,7 @@ if ($isEdit) {
         redirect_ke('admin/komplain/edit.php?id=' . (int) $existingKomplain['id']);
     }
 
-    $stmt = mysqli_prepare($conn, 'SELECT id, nama, lokasi_aduan, saran, tanggal FROM responden WHERE id = ? LIMIT 1');
+    $stmt = mysqli_prepare($conn, 'SELECT id, nama, tanggungan, lokasi_aduan, saran, tanggal FROM responden WHERE id = ? LIMIT 1');
     mysqli_stmt_bind_param($stmt, 'i', $idResponden);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
@@ -152,6 +153,7 @@ require_once __DIR__ . '/../../includes/admin_nav.php';
                             <div class="col-md-4"><label class="form-label">Area Komplain</label><input type="text" name="area_komplain" class="form-control" value="<?= e($formData['area_komplain']); ?>" required></div>
                             <div class="col-md-4"><label class="form-label">Identitas Pasien / Pelapor</label><input type="text" name="identitas_pasien" class="form-control" value="<?= e($formData['identitas_pasien']); ?>" required></div>
                             <div class="col-md-4"><label class="form-label">Status</label><select name="status" class="form-select"><?php foreach (daftar_status_komplain() as $kode => $label) : ?><option value="<?= e($kode); ?>" <?= $formData['status'] === $kode ? 'selected' : ''; ?>><?= e($label); ?></option><?php endforeach; ?></select></div>
+                            <?php if (!$isEdit && !empty($responden['tanggungan'])) : ?><div class="col-md-4"><label class="form-label">Tanggungan Responden</label><input type="text" class="form-control" value="<?= e($responden['tanggungan']); ?>" readonly></div><?php endif; ?>
                             <div class="col-md-6"><label class="form-label">Tanggal / Jam Komplain</label><input type="datetime-local" name="tanggal_komplain" class="form-control" value="<?= e($formData['tanggal_komplain']); ?>" required></div>
                             <div class="col-md-6"><label class="form-label">Tanggal / Jam Tindak Lanjut</label><input type="datetime-local" name="tanggal_tindak_lanjut" class="form-control" value="<?= e($formData['tanggal_tindak_lanjut']); ?>"></div>
                             <div class="col-12"><label class="form-label">Aduan Keluhan / Komplain</label><textarea name="aduan" class="form-control" rows="4" required><?= e($formData['aduan']); ?></textarea></div>

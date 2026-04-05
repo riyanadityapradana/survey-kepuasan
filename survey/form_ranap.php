@@ -6,7 +6,6 @@ $judul = 'Survei Kepuasan Rawat Inap';
 $subjudul = 'Masukan dari pasien rawat inap sangat membantu rumah sakit meningkatkan pelayanan.';
 $kelompokPertanyaan = ambil_pertanyaan_berdasarkan_jenis($conn, $jenis);
 $error = get_flash('error');
-$loksasiOptions = daftar_lokasi_aduan();
 $pageTitle = $judul;
 $activePublic = 'ranap';
 require_once __DIR__ . '/../includes/header.php';
@@ -40,7 +39,8 @@ $inlineScripts = ["const form = document.querySelector('[data-survey-form]'); if
                     <div class="row g-3">
                         <div class="col-md-6"><label class="form-label">Nama Keluarga Pasien/Pelapor</label><input type="text" name="nama" class="form-control" required maxlength="100"></div>
                         <div class="col-md-6"><label class="form-label">Jenis Kelamin</label><select name="jenis_kelamin" class="form-select" required><option value="">Pilih Jenis Kelamin</option><option value="Laki-Laki">Laki-Laki</option><option value="Perempuan">Perempuan</option></select></div>
-                        <div class="col-12"><label class="form-label">Lokasi Aduan / Layanan</label><select name="lokasi_aduan" class="form-select" required><option value="">Pilih Lokasi</option><?php foreach ($loksasiOptions as $lokasi) : ?><option value="<?= e($lokasi); ?>" <?= $lokasi === 'Lantai 3 (Rawat Inap)' ? 'selected' : ''; ?>><?= e($lokasi); ?></option><?php endforeach; ?></select></div>
+                        <div class="col-md-6"><label class="form-label">Apakah anda pasien tanggungan ?</label><input type="text" name="tanggungan" class="form-control" required maxlength="50" placeholder="Contoh: BPJS, Umum, Asuransi"></div>
+                        <div class="col-md-6"><label class="form-label">Lokasi Aduan / Layanan</label><input type="text" name="lokasi_aduan" class="form-control" required maxlength="250" placeholder='Contoh "Lantai 3 atau Lantai 1 atau Poli Kandungan"'></div>
                     </div>
                 </div>
             </div>
